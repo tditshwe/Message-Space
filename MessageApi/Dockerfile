@@ -12,7 +12,7 @@ WORKDIR /src
 COPY ["MessageApi.csproj", "."]
 RUN dotnet restore "./MessageApi.csproj"
 COPY . .
-WORKDIR "/src/."
+WORKDIR "/src"
 RUN dotnet build "./MessageApi.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
@@ -22,4 +22,6 @@ RUN dotnet publish "./MessageApi.csproj" -c $BUILD_CONFIGURATION -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+COPY ["appsettings.json", "."]
 ENTRYPOINT ["dotnet", "MessageApi.dll"]
