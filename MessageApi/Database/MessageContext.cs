@@ -1,5 +1,6 @@
 using MessageApi.Models;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 
 namespace MessageApi.Database
 {
@@ -69,7 +70,7 @@ namespace MessageApi.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            IConfigurationBuilder builder = new ConfigurationBuilder().AddJsonFile(Directory.GetCurrentDirectory() + "\\appsettings.json");
+            IConfigurationBuilder builder = new ConfigurationBuilder().AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"), optional: false, reloadOnChange: false);
             IConfigurationRoot config = builder.Build();
 
             optionsBuilder
