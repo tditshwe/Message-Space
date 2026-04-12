@@ -1,6 +1,7 @@
 using MessageApi.Models;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
+using Microsoft.Extensions.Configuration;
 
 namespace MessageApi.Database
 {
@@ -75,7 +76,7 @@ namespace MessageApi.Database
 
             optionsBuilder
                 .UseLazyLoadingProxies()
-                .UseSqlServer(config["ConnectionString"]);
+                .UseNpgsql(config.GetConnectionString("DefaultConnection"));
         }
     }
 }
