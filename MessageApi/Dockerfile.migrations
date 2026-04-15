@@ -1,0 +1,26 @@
+# Dockerfile for running EF Core migrations
+# Mirrors docker-compose migrations service
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS migrations
+
+# Set working directory
+WORKDIR /src
+
+# Copy csproj and restore first for better layer caching
+COPY MessageApi.csproj ./
+RUN dotnet restore
+
+# Copy the rest of the source
+COPY . .
+
+# Install dotnet-ef globally
+RUN dotnet tool install -g dotnet-ef
+
+# Ensure dotnet tools are on PATH
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+# Default command runs migrations; allow overriding via args/env
+ENV EF_MIGRATIONS_CMD="dotnet ef database update"
+
+# Run migrations once and exit
+ENTRYPOINT ["sh", "-c", "echo 'Running EF migrations'; $EF_MIGRATIONS_CMD"]
