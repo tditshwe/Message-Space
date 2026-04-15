@@ -15,6 +15,14 @@ namespace MessageApi.Database
         public DbSet<AccountMessage> AccountMessage { get; set; }
         public DbSet<GroupMessage> GroupMessage { get; set; }
 
+        public MessageContext()
+        {
+        }
+
+        public MessageContext(DbContextOptions<MessageContext> options) : base(options)
+        {
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Chat>()
