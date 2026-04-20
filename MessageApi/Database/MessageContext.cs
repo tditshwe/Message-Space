@@ -75,6 +75,28 @@ namespace MessageApi.Database
                 .HasOne<Message>(sc => sc.Message)
                 .WithMany(a => a.GroupMessages)
                 .HasForeignKey(sc => sc.MessageId);
+
+            // Seed initial accounts so the database is initialized with default users
+            modelBuilder.Entity<Account>().HasData(
+                new Account
+                {
+                    Username = "archi",
+                    Password = "AQAAAAIAAYagAAAAEINoKBPVubTytHlU50RzwhBqlNLoL19huAKwccvxEUOQaYE8G+inmgJoCT7bpTxEwA==",
+                    Name = "Archibaldo",
+                    Status = "Ready to chat",
+                    Role = "User",
+                    ImageUrl = null
+                },
+                new Account
+                {
+                    Username = "moriarty",
+                    Password = "AQAAAAIAAYagAAAAEIOYqTqM5ZBa8nGF6q+lNS6v2qwXBAafjIn0ZedetP546tI1GqLT6mD5A/rqRHssAA==",
+                    Name = "Moriarty",
+                    Status = "Ready to chat",
+                    Role = "User",
+                    ImageUrl = null
+                }
+            );
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
