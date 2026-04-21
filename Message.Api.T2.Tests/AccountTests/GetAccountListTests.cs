@@ -1,6 +1,5 @@
 ﻿using MessageApi.Models;
 using FluentAssertions;
-using Newtonsoft.Json.Linq;
 using Message.Api.T2.Tests.Tools;
 
 namespace Message.Api.T2.Tests.AccountTests
@@ -11,11 +10,11 @@ namespace Message.Api.T2.Tests.AccountTests
         public async Task GetAccountList_ShouldReturnAccountList()
         {
             // Arrange
-            var jwtSettings = AppConfig.GetSection("JwtSettings");
-            var token = jwtSettings["Token"];
+            var accountLogin = new AccountLogin { Username = "toshiba", Password = "Solutions" };
 
             // Act
-            Client!.AddHeader("Authorization", $"Bearer {token}");
+            var returnedLogin = await Client.PostAsync<AccountLogin, LoginResponse>("account/login", accountLogin);
+            Client!.AddHeader("Authorization", $"Bearer {returnedLogin!.Token}");
             var returnedAccountList = await Client.GetAsync<List<Account>>("Account/AccountList");
 
             // Assert

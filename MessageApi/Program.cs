@@ -71,6 +71,12 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 app.MapControllers();
 
+// Seed required accounts on startup
+using (var seedContext = new MessageContext())
+{
+    DataSeeder.Seed(seedContext);
+}
+
 app.Run();
 
 

@@ -1,7 +1,5 @@
 using MessageApi.Models;
 using FluentAssertions;
-using System.Text;
-using Microsoft.Extensions.Configuration;
 using Message.Api.T2.Tests.Tools;
 
 namespace Message.Api.T2.Tests.AccountTests
@@ -39,12 +37,11 @@ namespace Message.Api.T2.Tests.AccountTests
         {
             // Arrange
             var username = "toshiba";
-            var jwtSettings = AppConfig.GetSection("JwtSettings");
-            var token = jwtSettings["Token"];
+            var accountLogin = new AccountLogin { Username = "toshiba", Password = "Solutions" };
 
             // Act
-
-            Client!.AddHeader("Authorization", $"Bearer {token}");
+            var returnedLogin = await Client.PostAsync<AccountLogin, LoginResponse>("account/login", accountLogin);
+            Client!.AddHeader("Authorization", $"Bearer {returnedLogin!.Token}");
             var returnedAccount = await Client.GetAsync<AccountRetrieve>($"account?username={ username }");
 
             // Assert
@@ -59,12 +56,11 @@ namespace Message.Api.T2.Tests.AccountTests
         {
             // Arrange
             var username = "invaliduser";
-            var jwtSettings = AppConfig.GetSection("JwtSettings");
-            var token = jwtSettings["Token"];
+            var accountLogin = new AccountLogin { Username = "toshiba", Password = "Solutions" };
 
             // Act
-
-            Client!.AddHeader("Authorization", $"Bearer {token}");
+            var returnedLogin = await Client.PostAsync<AccountLogin, LoginResponse>("account/login", accountLogin);
+            Client!.AddHeader("Authorization", $"Bearer {returnedLogin!.Token}");
             var returnedBody = await Client.GetAsync<ResponseBody>($"account?username={username}");
 
             // Assert

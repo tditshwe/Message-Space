@@ -37,7 +37,12 @@ namespace MessageHandlingApi.Controllers
                 var acc = Context.Account.Find(usr);
 
                 if (acc == null)
-                    return NotFound();
+                    return NotFound(new ResponseBody
+                    {
+                        Title = "Not Found",
+                        Status = 404,
+                        Message = $"Account '{usr}' was not found"
+                    });
 
                 return Ok (new AccountRetrieve
                 {
