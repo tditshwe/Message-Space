@@ -19,8 +19,9 @@ services:
 
   migrations:
     build:
-      context: .
+      context: ./MessageApi
       dockerfile: Dockerfile.migrations
+    container_name: db-migrations
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,20 +42,14 @@ services:
       - DOTNET_RUNNING_IN_CONTAINER=true
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=Development
-    healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-      start_period: 10s
 
   tests:
     build:
       context: .
       dockerfile: Message.Api.T2.Tests/Dockerfile
+    container_name: T2-tests
     depends_on:
-      messageapp:
-        condition: service_healthy
+      - messageapp
     environment:
       - DOTNET_RUNNING_IN_CONTAINER=true
 
