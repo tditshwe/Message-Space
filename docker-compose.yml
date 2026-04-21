@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: message-api-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: message
+      POSTGRES_DB: message-api
+    ports:
+      - "5004:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d message-api"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrations:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=message-api;Username=postgres;Password=message
+
+  messageapp:
+    build:
+      context: ./MessageApi
+      dockerfile: Dockerfile
+    container_name: message-api
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    ports:
+      - "5000:8080"
+    environment:
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Development
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  tests:
+    build:
+      context: .
+      dockerfile: Message.Api.T2.Tests/Dockerfile
+    depends_on:
+      messageapp:
+        condition: service_healthy
+    environment:
+      - DOTNET_RUNNING_IN_CONTAINER=true
+
+volumes:
+  postgres_data:
+
+
+

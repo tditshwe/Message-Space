@@ -9,7 +9,7 @@ namespace Message.Api.T2.Tests.Tools
 {
     public static class AppConfig
     {
-        private static IConfigurationBuilder _builder = new ConfigurationBuilder().AddJsonFile(Directory.GetCurrentDirectory() + "\\appsettings.json");
+        private static IConfigurationBuilder _builder = new ConfigurationBuilder().AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json"));
         private static IConfigurationRoot _config = _builder.Build();
 
         public static IConfigurationSection GetSection(string name)
