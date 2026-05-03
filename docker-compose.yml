@@ -43,7 +43,7 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=Development
 
-  tests:
+  t2tests:
     build:
       context: .
       dockerfile: Message.Api.T2.Tests/Dockerfile

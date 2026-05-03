@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MessageApi.Models
 {
@@ -30,6 +31,15 @@ namespace MessageApi.Models
         public string? ImageUrl { get; set; }
     }
 
+    public class LoginResponse
+    {
+        public string? Username { get; set; }
+        public string? Name { get; set; }
+        public string? Token { get; set; }
+        public string? Status { get; set; }
+        public string? ImageUrl { get; set; }
+    }
+
     public class Account
     {
         [Key]
@@ -39,6 +49,9 @@ namespace MessageApi.Models
         public string? Status { get; set; }
         public string? Role { get; set; }
         public string? ImageUrl { get; set; }
+
+        [NotMapped]
+        public string? Token { get; set; }
 
         public virtual ICollection<Chat>? ChatsSent { get; set; }
         public virtual ICollection<Chat>? ChatsReceived { get; set; }

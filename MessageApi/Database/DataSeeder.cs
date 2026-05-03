@@ -8,6 +8,7 @@ namespace MessageApi.Database
         public static void Seed(MessageContext context)
         {
             SeedAccount(context, "toshiba", "Toshiba", "Solutions");
+            SeedAccount(context, "test-user", "Test user", "password");
         }
 
         private static void SeedAccount(MessageContext context, string username, string name, string password)

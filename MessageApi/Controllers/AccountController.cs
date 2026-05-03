@@ -14,44 +14,30 @@ using MessageApi.Database;
 using Microsoft.AspNetCore.Authorization;
 using MessageApi.Models;
 using Microsoft.AspNetCore.Identity;
+using MessageApi.Managers;
 
 namespace MessageHandlingApi.Controllers
 {
     [Authorize]
     [Route("messageApi/[controller]")]
     [ApiController]
-    public class AccountController : ControllerBase
+    public class AccountController (IAccountManager accountManager) : ControllerBase
     {
-        private readonly MessageContext Context = new MessageContext();
+        private readonly IAccountManager _accountManager = accountManager;
+		    private readonly MessageContext Context = new MessageContext();
 
-        /// <summary>
-        /// Get account info
-        /// </summary>
-        // GET messageHandlingApi/Account/
-        [HttpGet]
+		    /// <summary>
+		    /// Get account info
+		    /// </summary>
+		    // GET messageHandlingApi/Account/
+		    [HttpGet]
         public IActionResult GetAccount(string username = "")
         {
             try
             {
-                var usr = username == string.Empty ? User.Identity.Name : username;
-                var acc = Context.Account.Find(usr);
+                var usr = username == string.Empty ? User.Identity?.Name : username;
 
-                if (acc == null)
-                    return NotFound(new ResponseBody
-                    {
-                        Title = "Not Found",
-                        Status = 404,
-                        Message = $"Account '{usr}' was not found"
-                    });
-
-                return Ok (new AccountRetrieve
-                {
-                    Username = acc.Username,
-                    Name = acc.Name,
-                    Status = acc.Status,
-                    Role = acc.Role,
-                    ImageUrl = acc.ImageUrl
-                });
+                return Ok(_accountManager.GetAccount(usr));
             }
             catch (Exception e)
             {
@@ -67,22 +53,8 @@ namespace MessageHandlingApi.Controllers
         public IActionResult GetAccountList()
         {
             try
-            {
-                var accounts = Context.Account.Where(ac => ac.Username != User.Identity.Name).ToList();
-                List<AccountRetrieve> accList = new List<AccountRetrieve>();
-
-                accounts.ForEach(
-                    ac => accList.Add(new AccountRetrieve
-                    {
-                        Username = ac.Username,
-                        Name = ac.Name,
-                        Status = ac.Status,
-                        Role = ac.Role,
-                        ImageUrl = ac.ImageUrl
-                    })
-                );
-
-                return Ok (accList);
+            {          
+                return Ok (_accountManager.GetAccounts(User.Identity.Name));
             }
             catch (Exception e)
             {
@@ -99,40 +71,8 @@ namespace MessageHandlingApi.Controllers
         public IActionResult Create([FromBody] AccountCreate acc)
         {
             try
-            {
-                var existing = Context.Account.Find(acc.Username);
-
-                if (existing != null)
-                    return Ok(new ResponseBody
-                    {
-                        Message = "This username is already taken by another person",
-                        Title = "Already Exists",
-                        Status = 403
-                    });
-
-                PasswordHasher<Account> hasher = new PasswordHasher<Account>();
-
-                Account newAcc = new Account
-                {
-                    Username = acc.Username,
-                    Role = "User",
-                    Status = "Ready to chat",
-                    Name = acc.Name
-                };
-
-                // Hash account password
-                string hashed = hasher.HashPassword(newAcc, acc.Password);           
-
-                newAcc.Password = hashed;         
-
-                Context.Account.Add(newAcc);
-                Context.SaveChanges();
-
-                return Ok(new ResponseBody
-                {
-                    Title = "Created",
-                    Status = 201
-                });
+            {               
+                return Ok(_accountManager.CreateAccount(acc));
             }
             catch (Exception e)
             {
@@ -149,51 +89,8 @@ namespace MessageHandlingApi.Controllers
         public IActionResult Authenticate([FromBody] AccountLogin login)
         {
             try
-            {   
-                PasswordHasher<Account> hasher = new PasswordHasher<Account>();  
-                // var account = Context.Account.SingleOrDefault(x => x.Username == login.Username && hasher.VerifyHashedPassword(x, x.Password, login.Password) == PasswordVerificationResult.Success);
-
-                var account = Context.Account.SingleOrDefault(x => x.Username == login.Username);
-
-                if (account != null && hasher.VerifyHashedPassword(account, account.Password, login.Password) == PasswordVerificationResult.Success)
-                {
-                    // authentication successful so generate jwt token
-                    var tokenHandler = new JwtSecurityTokenHandler();
-                    // Secret for generating JWT tokens
-                    string secret = "WhatsApp Messenger Message Handler";
-                    var key = Encoding.ASCII.GetBytes(secret);
-
-                    var tokenDescriptor = new SecurityTokenDescriptor
-                    {
-                        Subject = new ClaimsIdentity(new Claim[]
-                        {
-                            new Claim(ClaimTypes.Name, account.Username),
-                            new Claim(ClaimTypes.Role, account.Role)
-                        }),
-                        //Token expires after 7 day days
-                        Expires = DateTime.UtcNow.AddDays(7),
-                        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-                    };
-
-                    var token = tokenHandler.CreateToken(tokenDescriptor);
-                    return Ok(new
-                    {
-                        account.Username,
-                        account.Name,
-                        Token = tokenHandler.WriteToken(token),
-                        account.Status,
-                        account.ImageUrl
-                    });
-                }
-                else
-                {
-                    // Authentication failed
-                    return BadRequest(new { message = "Invalid login details" });
-                }
-
-                
-
-               
+            {
+                return Ok(_accountManager.Authenticate(login));
             }
             catch (Exception e)
             {
@@ -266,16 +163,48 @@ namespace MessageHandlingApi.Controllers
         {
             try
             {
+                if (acc == null)
+                    return BadRequest(new ResponseBody <string>
+                    {
+                        Title = "Bad Request",
+                        Status = 400,
+                        Message = "Request body cannot be empty"
+                    });
+
+                if (string.IsNullOrWhiteSpace(acc.Name) && string.IsNullOrWhiteSpace(acc.Status))
+                    return BadRequest(new ResponseBody <string>
+                    {
+                        Title = "Bad Request",
+                        Status = 400,
+                        Message = "At least one field (Name or Status) must be provided"
+                    });
+
                 var username = User.Identity.Name;
                 Account edited = Context.Account.Find(username);
 
-                edited.Name = acc.Name;
-                edited.Status = acc.Status;
+                if (edited == null)
+                    return NotFound(new ResponseBody <string>
+                    {
+                        Title = "Not Found",
+                        Status = 404,
+                        Message = $"Account '{username}' was not found"
+                    });
+
+                if (!string.IsNullOrWhiteSpace(acc.Name))
+                    edited.Name = acc.Name;
+
+                if (!string.IsNullOrWhiteSpace(acc.Status))
+                    edited.Status = acc.Status;
 
                 Context.Account.Update(edited);
                 Context.SaveChanges();
 
-                return Ok();
+                return Ok(new ResponseBody <string>
+                {
+                    Title = "Updated",
+                    Status = 200,
+                    Message = "Account updated successfully"
+                });
             }
             catch (Exception e)
             {
@@ -325,7 +254,7 @@ namespace MessageHandlingApi.Controllers
                 Context.Account.Remove(account);
                 Context.SaveChanges();
 
-                return Ok(new ResponseBody
+                return Ok(new ResponseBody <int>
                 {
                     Title = "Deleted",
                     Status = 204,

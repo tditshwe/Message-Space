@@ -1,15 +1,12 @@
 ﻿using MessageApi.Models;
 using FluentAssertions;
-using System.Text;
-using Microsoft.Extensions.Configuration;
-using Message.Api.T2.Tests.Tools;
 
 namespace Message.Api.T2.Tests.AccountTests
 {
     internal class CreateAccountTests: TestBase
     {
         [Test]
-        public async Task CreateAccount_GivenExistingUser_ShouldReturnBadRequest()
+        public async Task CreateAccount_GivenExistingUser_ShouldReturnAlreadyExists()
         {
             // Arrange
             var newAccount = new AccountCreate
@@ -18,14 +15,15 @@ namespace Message.Api.T2.Tests.AccountTests
             };
 
             // Act
-            var returnedBody = await Client.PostAsync<AccountCreate, ResponseBody>("account", newAccount);
+            var response = await Client.PostAsync<AccountCreate, ResponseBody<Account>>("account", newAccount);
 
             // Assert
             Assert.Multiple(() =>
             {
-                returnedBody!.Title.Should().Be("Already Exists");
-                returnedBody.Status.Should().Be(403);
-                returnedBody.Message.Should().Be("This username is already taken by another person");
+                response!.Title.Should().Be("Already Exists");
+                response.Status.Should().Be(403);
+                response.Message.Should().Be("This username is already taken by another person");
+                response.Data.Should().BeNull();
             });
         }
 
@@ -41,19 +39,25 @@ namespace Message.Api.T2.Tests.AccountTests
             };
 
             // Act
-            var returnedBody = await Client.PostAsync<AccountCreate, ResponseBody>("account", newAccount);
-            var returnedLogin = await Client.PostAsync<AccountCreate, LoginResponse>("account/login", newAccount);
-            
-            Client!.AddHeader("Authorization", $"Bearer {returnedLogin!.Token}");
-            await Client!.DeleteAsync<ResponseBody>("account");
+            var response = await Client.PostAsync<AccountCreate, ResponseBody<Account>>("account", newAccount);
+            var returnedLogin = await Client.PostAsync<AccountLogin, ResponseBody<LoginResponse>>("account/login", new AccountLogin
+            {
+                Username = newAccount.Username,
+                Password = newAccount.Password
+            });
+
+            Client!.AddHeader("Authorization", $"Bearer {returnedLogin!.Data!.Token}");
+            await Client!.DeleteAsync<ResponseBody<int>>("account");
 
             // Assert
             Assert.Multiple(() =>
             {
-                returnedBody.Status.Should().Be(201);
-                returnedLogin!.Username.Should().Be(newAccount.Username);
-                newAccount!.Name.Should().Be(returnedLogin.Name);
-                returnedLogin.Status.Should().Be("Ready to chat");
+                response!.Status.Should().Be(201);
+                response.Title.Should().Be("Created");
+                response.Data!.Username.Should().Be(newAccount.Username);
+                response.Data.Name.Should().Be(newAccount.Name);
+                response.Data.Status.Should().Be("Ready to chat");
+                returnedLogin.Data!.Username.Should().Be(newAccount.Username);
             });
         }
     }

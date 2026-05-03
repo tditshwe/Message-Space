@@ -3,6 +3,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using MessageApi.Database;
+using MessageApi.Database.Interfaces;
+using MessageApi.Managers;
+using MessageHandlingApi.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +14,9 @@ var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.ASCII.GetBytes(jwtSettings["Secret"]);
 
 builder.Services.AddControllers();
+builder.Services.AddDbContext<MessageContext>();
+builder.Services.AddScoped<IAccountDatabase, AccountDatabase>();
+builder.Services.AddScoped<IAccountManager, AccountManager>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

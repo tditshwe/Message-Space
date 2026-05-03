@@ -60,6 +60,23 @@ namespace Message.Api.T2.Tests.Tools
             return JsonSerializer.Deserialize<TResponse>(responseString, _jsonOptions);
         }
 
+        public async Task<TResponse> PutAsync<TBody, TResponse>(string url, TBody body)
+        {
+            var jsonContent = new StringContent(
+                JsonSerializer.Serialize(body),
+                Encoding.UTF8,
+                "application/json"
+            );
+
+            var response = await _client!.PutAsync(url, jsonContent);
+            var responseString = await response.Content.ReadAsStringAsync();
+
+            if (string.IsNullOrWhiteSpace(responseString))
+                return default!;
+
+            return JsonSerializer.Deserialize<TResponse>(responseString, _jsonOptions);
+        }
+
         public void AddHeader(string name, string value)
         {
             _client!.DefaultRequestHeaders.Add(name, value);

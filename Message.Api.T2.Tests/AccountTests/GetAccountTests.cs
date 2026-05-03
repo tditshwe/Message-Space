@@ -18,17 +18,19 @@ namespace Message.Api.T2.Tests.AccountTests
             };
 
             // Act
-            var returnedLogin = await Client.PostAsync<AccountLogin, LoginResponse>("account/login", accountLogin);
+            var returnedLogin = await Client.PostAsync<AccountLogin, ResponseBody<LoginResponse>>("account/login", accountLogin);
 
-            Client!.AddHeader("Authorization", $"Bearer {returnedLogin!.Token}");
-            var returnedAccount = await Client.GetAsync<AccountRetrieve>("account");
+            Client!.AddHeader("Authorization", $"Bearer {returnedLogin!.Data!.Token}");
+            var response = await Client.GetAsync<ResponseBody<AccountRetrieve>>("account");
 
             // Assert
             Assert.Multiple(() =>
             {
-                returnedAccount!.Username.Should().Be(accountLogin.Username);
-                returnedAccount!.Name.Should().Be(returnedLogin.Name);
-                returnedAccount!.Status.Should().Be(returnedLogin.Status);
+                response.Title.Should().Be("Success");
+                response!.Status.Should().Be(200);
+                response.Data!.Username.Should().Be(accountLogin.Username);
+                response.Data.Name.Should().Be(returnedLogin.Data.Name);
+                response.Data.Status.Should().Be(returnedLogin.Data.Status);
             });
         }
 
@@ -36,18 +38,19 @@ namespace Message.Api.T2.Tests.AccountTests
         public async Task GetAccount_GivenValidUsername_ShouldReturnValidAccount()
         {
             // Arrange
-            var username = "toshiba";
+            var username = "test-user";
             var accountLogin = new AccountLogin { Username = "toshiba", Password = "Solutions" };
 
             // Act
-            var returnedLogin = await Client.PostAsync<AccountLogin, LoginResponse>("account/login", accountLogin);
-            Client!.AddHeader("Authorization", $"Bearer {returnedLogin!.Token}");
-            var returnedAccount = await Client.GetAsync<AccountRetrieve>($"account?username={ username }");
+            var returnedLogin = await Client.PostAsync<AccountLogin, ResponseBody<LoginResponse>>("account/login", accountLogin);
+            Client!.AddHeader("Authorization", $"Bearer {returnedLogin!.Data!.Token}");
+            var response = await Client.GetAsync<ResponseBody<AccountRetrieve>>($"account?username={username}");
 
             // Assert
             Assert.Multiple(() =>
             {
-                returnedAccount!.Username.Should().Be(username);
+                response!.Status.Should().Be(200);
+                response.Data!.Username.Should().Be(username);
             });
         }
 
@@ -59,15 +62,17 @@ namespace Message.Api.T2.Tests.AccountTests
             var accountLogin = new AccountLogin { Username = "toshiba", Password = "Solutions" };
 
             // Act
-            var returnedLogin = await Client.PostAsync<AccountLogin, LoginResponse>("account/login", accountLogin);
-            Client!.AddHeader("Authorization", $"Bearer {returnedLogin!.Token}");
-            var returnedBody = await Client.GetAsync<ResponseBody>($"account?username={username}");
+            var returnedLogin = await Client.PostAsync<AccountLogin, ResponseBody<LoginResponse>>("account/login", accountLogin);
+            Client!.AddHeader("Authorization", $"Bearer {returnedLogin!.Data!.Token}");
+            var response = await Client.GetAsync<ResponseBody<AccountRetrieve>>($"account?username={username}");
 
             // Assert
             Assert.Multiple(() =>
             {
-                returnedBody!.Title.Should().Be("Not Found");
-                returnedBody.Status.Should().Be(404);
+                response!.Title.Should().Be("Not Found");
+                response.Status.Should().Be(404);
+                response.Message.Should().Be($"Account '{username}' was not found");
+                response.Data.Should().BeNull();
             });
         }
     }

@@ -23,14 +23,5 @@ namespace Message.Api.T2.Tests
         {
             Client!.Dispose();
         }
-
-        protected class LoginResponse
-        {
-            public string? Username { get; set; }
-            public string? Name { get; set; }
-            public string? Token { get; set; }
-            public string? Status { get; set; }
-            public string? ImageUrl { get; set; }
-        }
     }
 }
